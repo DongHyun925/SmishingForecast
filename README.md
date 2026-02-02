@@ -13,8 +13,7 @@
   ```text
   models/refined_kcbert/
   └── model.safetensors
-
-```
+  ```
 
 ### 2. API 환경 변수 설정
 
