@@ -1,0 +1,5 @@
+.env
+해커톤.zip
+poetry.lock
+pyproject.toml
+models/refined_kcbert/model.safetensors
