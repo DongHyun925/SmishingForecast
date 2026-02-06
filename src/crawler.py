@@ -48,7 +48,7 @@ class NaverApiCrawler:
         categories = {
             "DEEPFAKE_AI_SCAM": {
                 "keywords": ['딥페이크', '합성', '영상통화', '목소리', '얼굴', '페이스스왑', '생성형 ai'],
-                "weight": 1.5  # 신종 수법이므로 우선순위 가중치 부여
+                "weight": 1.5
             },
             "GOV_IMPERSONATION": {
                 "keywords": ['검찰', '경찰', '금감원', '수사관', '계좌동결', '구속영장', '범죄연루', '검사'],
@@ -62,9 +62,22 @@ class NaverApiCrawler:
                 "keywords": ['투자', '코인', '리딩방', '고수익', '공모주', '상장', '수익률', '재테크'],
                 "weight": 1.0
             },
-            "LIFESTYLE_SMISHING": {  # 기존 SMISHING_NEW_TYPE 변경
-                "keywords": ['부고', '청첩장', '택배', '건강검진', '배송지', '미납', '과태료', '환급금'],
-                "weight": 0.8  # 워낙 흔하게 나타나므로 가중치를 약간 낮춤 (정확도 확보)
+            # [신규] 사회/정책적 맥락 (Social Context)
+            "POLICY_NEWS": {
+                "keywords": ['정책', '지원금', '환급금', '연말정산', '청약', '보조금', '개정', '시행'],
+                "weight": 1.1 
+            },
+            "ECONOMIC_ISSUE": {
+                "keywords": ['금리', '물가', '환율', '주식', '비트코인', '폭락', '급등', '경제 위기'],
+                "weight": 1.0
+            },
+            "SOCIAL_EVENT": {
+                "keywords": ['명절', '추석', '설날', '블랙프라이데이', '할인', '택배', '휴가', '올림픽', '월드컵'],
+                "weight": 1.0
+            },
+            "LIFESTYLE_SMISHING": {
+                "keywords": ['부고', '청첩장', '택배', '건강검진', '배송지', '미납', '과태료'],
+                "weight": 0.8
             }
         }
 
@@ -80,11 +93,11 @@ class NaverApiCrawler:
         
         # 만약 점수가 0이거나 너무 낮으면 일반형으로 분류
         if max_score < 0.5:
-            return "GENERAL_SCAM"
+            return "GENERAL_CONTEXT" # SCAM이 아닌 일반 Context일 수 있으므로 변경
         
         # 가장 높은 점수를 받은 카테고리 반환
         return max(category_scores, key=category_scores.get)
-
+    
     def analyze_trends(self, data_list):
         analysis_result = {"methods": [], "targets": [], "channels": []}
         all_text = " ".join([d['title'] + " " + (d['content'] if d['content'] else "") for d in data_list])
@@ -129,7 +142,7 @@ class NaverApiCrawler:
                 description = re.sub('<[^>]*>', '', item['description'])
                 
                 processed_item = {
-                    "id": f"SCAM-API-{datetime.now().strftime('%Y%m%d')}-{random.randint(1000, 9999)}",
+                    "id": f"CTX-API-{datetime.now().strftime('%Y%m%d')}-{random.randint(1000, 9999)}",
                     "type": self._determine_type(title, description),
                     "title": title,
                     "source": "Naver News API",
@@ -175,6 +188,22 @@ class NaverApiCrawler:
                 "logic": "1. 생활 밀착형(택배, 부고, 범칙금) 키워드 활용 2. 마감 임박 또는 반송 예정 등 행동 촉구 3. 본인 인증 절차 위장",
                 "target_emotion": "일상적 불편함 해결 욕구/호기심",
                 "cta": "상세 주소지 확인"
+            },
+            # [신규 전략] 사회적 맥락 악용
+            "POLICY_NEWS": {
+                "logic": "1. '신청 마감' 또는 '지급 대상 선정' 강조 2. 복잡한 정책을 쉽게 해결해주는 척 접근 3. 가짜 정부 신청 페이지 유도",
+                "target_emotion": "혜택 상실에 대한 불안/기대감",
+                "cta": "지원금 조회/신청하기"
+            },
+            "ECONOMIC_ISSUE": {
+                "logic": "1. 경제 위기/하락장을 틈탄 '안전 자산' 또는 '손실 만회' 제안 2. '긴급 정보'라며 희소성 강조",
+                "target_emotion": "경제적 불안감/손실 회피 본능",
+                "cta": "긴급 대응 리포트 확인"
+            },
+            "SOCIAL_EVENT": {
+                "logic": "1. 시즌 특수(명절 선물, 할인 등)를 가장한 배송/이벤트 당첨 문자 2. '물량 소진 임박' 등 시간 제한 설정",
+                "target_emotion": "들뜬 분위기 속의 방심/호기심",
+                "cta": "배송지 입력/쿠폰 받기"
             }
         }
 
@@ -183,7 +212,7 @@ class NaverApiCrawler:
                 # 분류된 타입에 맞는 전략 선택 (없으면 일반형)
                 strat = attack_strategies.get(item['type'], {
                     "logic": "1. 긴급한 상황 설정 2. 심리적 압박 3. 클릭 유도",
-                    "target_emotion": "불안/긴박함",
+                    "target_emotion": "일반적 호기심/불안",
                     "cta": "확인 링크"
                 })
 
@@ -194,7 +223,7 @@ class NaverApiCrawler:
                         "source_date": item['timestamp']
                     },
                     "attack_design": {
-                        "instruction": f"제공된 '{item['type']}' 최신 기사를 분석하여, 타겟의 심리를 파고드는 사회공학적 공격 시나리오를 설계하라.",
+                        "instruction": f"제공된 '{item['type']}' 기사(사회적 맥락)를 분석하여, 이를 악용하는 지능형 스미싱 시나리오를 설계하라.",
                         "strategy_logic": strat["logic"],
                         "target_emotion": strat["target_emotion"],
                         "call_to_action": strat["cta"],
@@ -212,20 +241,17 @@ if __name__ == "__main__":
     crawler = NaverApiCrawler()
     
     target_keywords = [
-        # 1. 생활 밀착형 (기존)
+        # 1. 기존 범죄 키워드
         "스미싱 부고장", "택배 주소지 확인 문자", "건강검진 결과 조회 사기",
-        
-        # 2. 공공기관/정책 사칭 (강화)
         "민생회복지원금 사기문자", "교통범칙금 과태료 스미싱", "국세청 환급금 문자",
-        
-        # 3. 금융/결제 사칭
         "해외결제 승인 스미싱", "카드 발급 확인 문자 사기", "저금리 대환대출 스미싱",
-        
-        # 4. 신종/AI 기술형
         "딥페이크 지인 합성 사기", "영상통화 몸캠 피싱", "AI 목소리 사칭 피싱",
+        "자녀 사칭 메신저 피싱", "부모님 휴대폰 파손 사기",
         
-        # 5. 가족/지인 타겟
-        "자녀 사칭 메신저 피싱", "부모님 휴대폰 파손 사기"
+        # 2. [신규] 사회 중립적 키워드 (잠재적 공격 재료)
+        "2025년 달라지는 정책", "소상공인 지원금 신청 방법", "청년 월세 지원 대상",
+        "건강보험료 환급금 조회", "연말정산 미리보기 서비스", "아파트 청약 일정",
+        "명절 기차표 예매 일정", "블랙프라이데이 세일 정보"
     ]
 
     # 데이터 수집 실행

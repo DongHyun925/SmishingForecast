@@ -3,7 +3,7 @@ import json
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
 class IntentAnalyzer:
     def __init__(self, api_key=None):

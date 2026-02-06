@@ -1,14 +1,26 @@
-# detector.py
 import torch
 import re
+import os
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
 class SmishingDetector:
-    def __init__(self, model_name="models/refined_kcbert", threshold=0.7):
+    def __init__(self, model_name="klue/roberta-base", threshold=0.7):
         print(f"[*] 모델 로딩 중: {model_name}...")
+        
+        # Hugging Face 표준 AutoClass 사용 (별도 설정 불필요)
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2)
         
+        # [수정] 학습된 가중치가 있으면 로드
+        weights_path = "models/smishing_detector_model.pth"
+        if os.path.exists(weights_path):
+            print(f"[*] 학습된 가중치 발견! 로드 중: {weights_path}")
+            # map_location을 사용하여 CPU/GPU 호환성 확보
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            self.model.load_state_dict(torch.load(weights_path, map_location=device))
+        else:
+            print("[!] 학습된 가중치가 없습니다. Pre-trained 상태로 시작합니다.")
+
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
         self.model.eval()

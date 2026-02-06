@@ -14,8 +14,9 @@ from src.intent_analyzer import IntentAnalyzer
 from src.detector import SmishingDetector
 from src.trainer import SmishingTrainer
 from src.utils import load_jsonl
+from src.report_generator import SecurityReportGenerator
 
-# --- 유효성 검사 함수 추가 ---
+# --- 유효성 검사 함수 ---
 def validate_attack_message(message):
     refusal_patterns = [
         "수행할 수 없습니다", "도와드릴 수 없습니다", "죄송하지만", 
@@ -39,10 +40,20 @@ if 'initialized' not in st.session_state:
         st.session_state.planner = SmishingPlanner()
         st.session_state.generator = SmishingGenerator()
         st.session_state.analyzer = IntentAnalyzer()
-        st.session_state.detector = SmishingDetector(threshold=0.8)
-        st.session_state.trainer = SmishingTrainer(st.session_state.detector)
+        # [변경] 학습 모델의 특성(Spam avg=0.72)을 고려하여 임계값을 0.5로 조정
+        st.session_state.detector = SmishingDetector(threshold=0.5)
+        st.session_state.reporter = SecurityReportGenerator()
         st.session_state.initialized = True
+    
+    # [수정] 코드가 변경되었을 때 최신 로직을 반영하기 위해 Trainer는 매번 새로 생성
+    st.session_state.trainer = SmishingTrainer(st.session_state.detector)
+    
     st.success("시스템 준비 완료!")
+
+# --- 사이드바: 데이터 로드 ---
+from email.utils import parsedate_to_datetime
+
+# ... (imports)
 
 # --- 사이드바: 데이터 로드 ---
 st.sidebar.header("📂 Data Source")
@@ -50,45 +61,90 @@ data_path = "data/smishing_context_data.jsonl"
 news_data = load_jsonl(data_path)
 
 if news_data:
+    # 날짜 기준 내림차순 정렬 (최신 기사가 상단에 오도록)
+    try:
+        news_data.sort(key=lambda x: parsedate_to_datetime(x['context']['source_date']), reverse=True)
+    except Exception as e:
+        st.sidebar.warning(f"날짜 정렬 중 오류가 발생했습니다: {e}")
+
     st.sidebar.success(f"{len(news_data)}개의 뉴스 데이터를 로드했습니다.")
-    selected_news = st.sidebar.selectbox("분석할 뉴스를 선택하세요", news_data, 
-                                        format_func=lambda x: x['context']['news_title'])
+    selected_news = st.sidebar.selectbox("분석할 뉴스를 선택하세요 (최신순)", news_data, 
+                                        format_func=lambda x: f"[{x['context']['category']}] {x['context']['news_title']}")
 else:
     st.sidebar.error("데이터 파일을 찾을 수 없습니다.")
     st.stop()
 
+# --- 메인 화면 레이아웃 ---
 # --- 메인 화면 레이아웃 ---
 col1, col2 = st.columns(2)
 
 # --- LEFT: 공격 시뮬레이션 (Red Team) ---
 with col1:
     st.header("😈 Attack Simulation (Red Team)")
-    
-    if st.button("🚀 공격 시나리오 기획 및 생성"):
-        with st.status("공격 전략 수립 및 문구 생성 중...", expanded=True) as status:
-            strategies = st.session_state.planner.plan_multiple_scenarios(selected_news, count=1)
-            strategy = strategies[0]
-            st.write(f"기획된 전략: **{strategy['strategy_name']}**")
+    st.info(f"**선택된 뉴스**: {selected_news['context']['news_title']}")
+    if st.button("🚀 공격 시나리오 기획 (3종)", use_container_width=True):
+        with st.status("사회공학적 심리 분석 및 전략 수립 중...", expanded=True) as status:
+            # 1. 3가지 시나리오 기획
+            strategies = st.session_state.planner.plan_multiple_scenarios(selected_news, count=3)
             
-            attack_msg = st.session_state.generator.generate_attack_message(strategy)
+            if not strategies:
+                status.update(label="시나리오 기획 실패", state="error", expanded=True)
+                st.error("시나리오를 생성할 수 없습니다.")
+                st.stop()
             
-            # 생성 결과 검증
-            is_valid, reason = validate_attack_message(attack_msg)
-            
-            if is_valid:
-                st.session_state.current_attack = {"strategy": strategy, "message": attack_msg, "is_valid": True}
-                status.update(label="공격 준비 완료!", state="complete", expanded=False)
-            else:
-                st.session_state.current_attack = {"strategy": strategy, "message": attack_msg, "is_valid": False, "reason": reason}
-                status.update(label="공격 생성 실패", state="error", expanded=True)
+            st.session_state.strategies = strategies
+            st.session_state.generated = False # 새로운 기획이므로 생성 상태 초기화
+            status.update(label="3가지 전략 수립 완료!", state="complete", expanded=False)
 
-    if 'current_attack' in st.session_state:
+    # 2. 시나리오 선택 및 생성 (기획된 전략이 있을 경우 표시)
+    if 'strategies' in st.session_state and st.session_state.strategies:
+        st.divider()
+        st.subheader("🕵️‍♀️ 전략 선택")
+        
+        # 전략 표시 및 선택를 위한 라디오 버튼 (가독성을 위해 포맷팅)
+        strategy_options = {
+            f"{s['id']} : {s['strategy_name']}": i 
+            for i, s in enumerate(st.session_state.strategies)
+        }
+        
+        selected_option = st.radio(
+            "공격을 수행할 시나리오를 선택하세요:",
+            list(strategy_options.keys())
+        )
+        
+        selected_idx = strategy_options[selected_option]
+        selected_strategy = st.session_state.strategies[selected_idx]
+        
+        # 선택된 전략 상세 정보 보여주기
+        with st.expander("📌 전략 상세 분석 (클릭하여 펼치기)", expanded=True):
+            st.write(f"**사칭:** {selected_strategy['impersonation']}")
+            st.write(f"**심리 기제:** {selected_strategy['trigger']}")
+            st.write(f"**논리:** {selected_strategy['logic']}")
+
+        # 3. 실제 공격 문구 생성 버튼
+        if st.button("⚡ 이 전략으로 공격 문자 생성", type="primary", use_container_width=True):
+            with st.spinner("AI가 실제 공격 문구를 생성하고 있습니다..."):
+                attack_msg = st.session_state.generator.generate_attack_message(selected_strategy)
+                
+                # 생성 결과 검증
+                is_valid, reason = validate_attack_message(attack_msg)
+                
+                if is_valid:
+                    st.session_state.current_attack = {"strategy": selected_strategy, "message": attack_msg, "is_valid": True}
+                    st.session_state.current_news = selected_news
+                    st.session_state.generated = True
+                else:
+                    st.session_state.current_attack = {"strategy": selected_strategy, "message": attack_msg, "is_valid": False, "reason": reason}
+
+    if 'current_attack' in st.session_state and st.session_state.get('generated', False):
         attack = st.session_state.current_attack
+        st.divider()
         if attack['is_valid']:
-            st.info(f"**[선택된 전략]** {attack['strategy']['strategy_name']}\n\n- 사칭: {attack['strategy']['impersonation']}\n- 논리: {attack['strategy']['logic']}")
+            st.success(f"**[전략] {attack['strategy']['strategy_name']}**")
             st.chat_message("user", avatar="😈").write(f"**생성된 적대적 문구:**\n\n> {attack['message']}")
         else:
-            st.error(f"⚠️ **생성 실패 알림**\n\n사유: {attack['reason']}\n\n내용: {attack['message']}")
+            st.error(f"⚠️ 생성 실패: {attack['reason']}")
+            st.warning("안전 가이드라인 위반 등으로 생성이 거부되었습니다.")
             st.warning("LLM의 안전 가이드라인에 의해 공격 문구 생성이 거부되었습니다. 다른 뉴스나 시나리오로 재시도하세요.")
 
 # --- RIGHT: 방어 및 분석 (Blue Team) ---
@@ -99,37 +155,53 @@ with col2:
     if 'current_attack' in st.session_state and st.session_state.current_attack['is_valid']:
         attack_msg = st.session_state.current_attack['message']
         
-        # 3. Intent Analyzer 작동
-        st.subheader("🔍 의도 분석 및 위험도 평가")
+        # 1. Intent Analyzer
+        st.subheader("🔍 의도 분석 (Intent Analysis)")
         with st.spinner("공격자의 의도를 파고드는 중..."):
-            intent_res = st.session_state.analyzer.analyze_intent(attack_msg)
+            if 'last_analysis_msg' not in st.session_state or st.session_state.last_analysis_msg != attack_msg:
+                st.session_state.intent_res = st.session_state.analyzer.analyze_intent(attack_msg)
+                st.session_state.last_analysis_msg = attack_msg
+            
+            intent_res = st.session_state.intent_res
         
         i_col1, i_col2 = st.columns(2)
         with i_col1:
-            st.metric("위험 점수", f"{intent_res.get('severity_score', 1)} / 5")
-        with i_col2:
             st.metric("위협 레벨", intent_res.get('threat_level', 'Unknown'))
+        with i_col2:
+            st.metric("위험 점수", f"{intent_res.get('severity_score', 0)} / 5")
         
         st.write(f"**수법 분류:** {intent_res['intent_name']}")
         st.caption(f"**법적 위반 소지:** {', '.join(intent_res.get('legal_risks', []))}")
         
         st.divider()
 
-        # 4. Detector 작동 및 자가 진화
-        st.subheader("🛡️ 실시간 탐지 및 자가 진화")
-        res_v1 = st.session_state.detector.predict(attack_msg)
+        # 2. Detector & Evolution
+        st.subheader("🛡️ 실시간 탐지 (Detection)")
         
-        # 판정 결과 시각화
-        status_color = "red" if not res_v1['is_smishing'] else "green"
-        st.markdown(f"**판정 결과:** :{status_color}[{'스미싱(차단)' if res_v1['is_smishing'] else '정상(통과)'}]")
-        st.progress(res_v1['smishing_score'], text=f"스미싱 확률: {res_v1['smishing_score']:.4f}")
+        # [수정] 동적 업데이트를 위해 빈 컨테이너(placeholder) 생성
+        detection_container = st.empty()
+        
+        def render_detection_ui(result):
+            with detection_container.container():
+                status_color = "red" if not result['is_smishing'] else "green"
+                st.markdown(f"**판정 결과:** :{status_color}[{'스미싱(차단)' if result['is_smishing'] else '정상(통과)'}]")
+                
+                prob = result['smishing_score']
+                st.metric(
+                    label="AI 스미싱 탐지 확률", 
+                    value=f"{prob*100:.2f}%", 
+                    delta=f"{'⚠️ 위험' if prob > 0.5 else '✅ 안전'}",
+                    delta_color="inverse"
+                )
+                st.progress(prob, text=f"Model Confidence: {prob:.4f}")
 
-        # 진화 임계값 (Harding Threshold)
+        # 초기 상태 렌더링
+        res_v1 = st.session_state.detector.predict(attack_msg)
+        render_detection_ui(res_v1)
+
         EVOLUTION_THRESHOLD = 0.95
-
         if res_v1['smishing_score'] < EVOLUTION_THRESHOLD:
-            st.error(f"🚨 방어 보강 필요 (신뢰도 {res_v1['smishing_score']:.4f} < {EVOLUTION_THRESHOLD})")
-            
+            st.error(f"🚨 방어 보강 필요 (신뢰도 부족)")
             if st.button("⚙️ 자가 진화 (적대적 학습) 시작"):
                 with st.spinner("가중치 업데이트 중..."):
                     train_data = [{"generated_message": attack_msg, "intent_analysis": intent_res}]
@@ -140,18 +212,49 @@ with col2:
                     os.remove(temp_path)
                 
                 res_v2 = st.session_state.detector.predict(attack_msg)
-                diff = res_v2['smishing_score'] - res_v1['smishing_score']
                 
-                st.balloons()
+                # [핵심] 진화 완료 후 UI 즉시 갱신
+                render_detection_ui(res_v2) 
+                
                 st.success(f"🛡️ 진화 완료! 확률 인지력이 `{res_v1['smishing_score']:.4f}` → `{res_v2['smishing_score']:.4f}`로 향상되었습니다.")
-        else:
-            st.success(f"🛡️ 신뢰도 {res_v1['smishing_score']:.4f}로 완벽 방어 중입니다.")
-    
+                st.balloons() # 시각적 효과 추가
+
+        st.divider()
+
+        # 3. Security Report Generation
+        st.header("📑 보안 리포트 발간")
+        if st.button("📝 리포트 생성 하기", type="primary", use_container_width=True):
+            with st.spinner("보고서 분석 및 PDF 생성 중..."):
+                # 1. 텍스트 내용 생성
+                text_content = st.session_state.reporter.generate_report_content(
+                    st.session_state.current_news,
+                    st.session_state.current_attack,
+                    st.session_state.intent_res
+                )
+                # 2. PDF 변환
+                pdf_bytes = st.session_state.reporter.create_pdf_report(text_content)
+                st.session_state.report_pdf = pdf_bytes
+                # 미리보기용 텍스트 저장
+                st.session_state.report_preview = text_content
+
+        if 'report_pdf' in st.session_state:
+            with st.expander("📄 리포트 내용 미리보기", expanded=True):
+                st.markdown(st.session_state.report_preview)
+            
+            st.download_button(
+                label="📥 리포트 다운로드 (PDF 문서)",
+                data=st.session_state.report_pdf,
+                file_name=f"security_report_{datetime.now().strftime('%Y%m%d')}.pdf",
+                mime="application/pdf",
+                use_container_width=True
+            )
+
     elif 'current_attack' in st.session_state:
         st.info("유효하지 않은 공격 데이터입니다. 분석을 수행하지 않습니다.")
+    else:
+        st.info("왼쪽에서 공격 시나리오를 생성해주세요.")
 
 # --- 하단 로그 ---
 st.divider()
-st.subheader("📊 Scenario Bank")
-with st.expander("시스템 인지 수법 도감"):
+with st.expander("📊 시스템 인지 수법 도감 (Scenario Bank)"):
     st.table(st.session_state.analyzer.scenario_bank)
