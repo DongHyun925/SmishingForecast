@@ -1,58 +1,231 @@
+<div align="center">
 
-# 🛡️ Hackathon_Smishing
-> **KcBERT 기반의 자가 진화형 지능형 스미싱 방어 시스템** > 최신 사회적 맥락 분석을 통한 적대적 공격 시뮬레이션 및 신뢰도 기반 자가 학습 아키텍처
+# � Smishing Forecast
 
+### *Self-Evolving AI-Powered Smishing Defense System*
 
-## ⚙️ 시작하기 전 (Environment Setup)
+[![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-1.28+-red.svg)](https://streamlit.io/)
+[![Transformers](https://img.shields.io/badge/🤗-Transformers-yellow.svg)](https://huggingface.co/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-### 1. 모델 파일 준비 (Pre-trained Weights)
-본 프로젝트는 보안 및 효율성을 위해 대용량 모델 파일(`model.safetensors`)을 저장소에 포함하고 있지 않습니다. 실행 전 아래 가이드에 따라 모델을 배치하세요.
-* **다운로드 링크:** [Notion 모델 다운로드](https://www.notion.so/MVP-2f2bf15f4f2680f5b964d51419383b0b?source=copy_link)
-* **파일명:** `model.safetensors`
-* **배치 경로:**
-  ```text
-  models/refined_kcbert/
-  └── model.safetensors
-  ```
-
-### 2. API 환경 변수 설정
-
-프로젝트 루트 디렉토리에 `.env` 파일을 생성하고 아래의 인증 정보를 입력해야 합니다.
-
-```env
-# OpenAI API 설정 (Planner, Generator, Analyzer용)
-OPENAI_API_KEY=your_openai_api_key_here
-
-# Naver API 설정 (Crawler용)
-NAVER_CLIENT_ID=your_naver_client_id_here
-NAVER_CLIENT_SECRET=your_naver_client_secret_here
-
-```
-
-> **⚠️ 주의**: `.env` 파일은 절대 Git에 Push하지 마십시오. (본 저장소는 `.gitignore`로 보호됨)
+</div>
 
 ---
 
-## 🚀 설치 및 실행 방법
+## 👥 Team Members
 
-1. **Pipeline 통합 실행 (Main)**
-데이터 수집부터 적대적 공격 생성, 자가 진화 학습까지의 전 과정을 자동 실행합니다.
+| 이름 | 이메일 |
+|------|--------|
+| 조은경 | gracech0961@gmail.com |
+| 안성민 | tjdals2299@gmail.com |
+| 황동현 | myjewel29@naver.com |
+| 황선우 | eddiehwang125@gmail.com |
+
+---
+
+## 📖 프로젝트 소개
+
+AI 기반 자가 진화형 스미싱 탐지 및 방어 시스템입니다. 최신 뉴스를 기반으로 공격 시나리오를 예측하고, 적대적 학습(Adversarial Training)을 통해 실시간으로 방어력을 강화합니다.
+
+## ✨ 주요 기능
+
+### 🔴 Red Team (공격 시뮬레이션)
+- **뉴스 기반 시나리오 기획**: 실제 사회 이슈를 활용한 현실적인 공격 전략 생성
+- **GPT-4 기반 공격 문구 생성**: 자연스럽고 교묘한 스미싱 메시지 자동 생성
+- **스텔스 모드**: URL, 전화번호, 의심 키워드를 제거한 은밀한 공격 시뮬레이션
+
+### 🔵 Blue Team (방어 및 분석)
+- **RoBERTa 기반 실시간 탐지**: `klue/roberta-base` 모델을 활용한 한국어 스미싱 탐지
+- **의도 분석**: 공격자의 심리 기제, 위협 레벨, 법적 위반 소지 분석
+- **자가 진화 (Self-Evolution)**: 탐지 실패 시 즉시 재학습하여 방어력 강화
+- **보안 리포트 자동 생성**: PDF 보고서 생성 및 다운로드
+
+### 💾 데이터 관리
+- **SQLite 기반 영구 저장**: 뉴스, 공격 시나리오, 분석 결과, 보고서 자동 저장
+- **Supabase 연동 지원**: 클라우드 데이터베이스 옵션 제공 (선택 사항)
+
+## 🚀 설치 및 실행
+
+### 1. 저장소 클론
 ```bash
-python main.py
-
+git clone https://github.com/gracechoek/Hackathon_Smishing.git
+cd Hackathon_Smishing
+git checkout feat/ai-defense-update
 ```
 
-2. **데모 대시보드 실행 (Streamlit)**
-인터랙티브한 시각화 화면에서 실시간 공격 분석 및 진화 과정을 시연합니다.
+### 2. 의존성 설치
+```bash
+pip install -r requirements.txt
+```
+
+### 3. 환경 변수 설정
+`.env.example`을 `.env`로 복사하고 API 키를 입력하세요:
+```bash
+cp .env.example .env
+```
+
+`.env` 파일 내용:
+```
+OPENAI_API_KEY=your_actual_openai_api_key
+```
+
+### 4. 사전 학습된 모델 다운로드 (선택 사항)
+사전 학습된 RoBERTa 모델을 사용하려면:
+```bash
+# Hugging Face에서 다운로드
+# https://huggingface.co/donghyun95/smishing-detection-roberta-base
+```
+
+또는 프로그램 실행 시 `klue/roberta-base` 기본 모델로 시작 가능합니다.
+
+### 5. 애플리케이션 실행
 ```bash
 streamlit run app.py
-
 ```
 
----
-## 📂 데이터 저장소 구조 (Data Store)
+브라우저에서 `http://localhost:8501`로 접속하세요.
 
-* `scam_news_api_raw.json`: 수집된 뉴스 원천 데이터.
-* `smishing_context_data.jsonl`: AI 에이전트용으로 정제된 뉴스 맥락 지식 베이스.
-* `final_dataset.json`: 생성 문구, 분석 결과, 탐지 확률이 포함된 통합 리포트.
-* `vulnerabilities.json`: 모델 강화를 위해 선별된 고품질 취약점 샘플 로그.
+## 📁 프로젝트 구조
+
+```
+Hackathon_Smishing/
+├── app.py                      # Streamlit 메인 애플리케이션
+├── database_manager.py         # 데이터베이스 관리 (SQLite/Supabase)
+├── requirements.txt            # Python 의존성
+├── .env.example               # 환경 변수 템플릿
+│
+├── src/                       # 핵심 모듈
+│   ├── planner.py            # 공격 시나리오 기획 (Red Team)
+│   ├── generator.py          # 공격 문구 생성 (GPT-4)
+│   ├── intent_analyzer.py    # 의도 분석 (Blue Team)
+│   ├── detector.py           # 스미싱 탐지 모델 (RoBERTa)
+│   ├── trainer.py            # 자가 진화 학습 (Adversarial Training)
+│   ├── report_generator.py   # 보안 리포트 생성 (PDF)
+│   ├── utils.py              # 유틸리티 함수
+│   └── crawler.py            # 뉴스 크롤러
+│
+├── data/                      # 데이터 저장소
+│   ├── smishing_context_data.jsonl  # 뉴스 컨텍스트 데이터
+│   └── test_dataset.json            # 평가용 데이터셋
+│
+├── models/                    # 학습된 모델 가중치
+│   └── smishing_detector_model.pth  # Fine-tuned RoBERTa 가중치
+│
+└── scripts/                   # 유틸리티 스크립트
+    └── deploy_model.py       # Hugging Face Hub 배포 스크립트
+```
+
+## 🎯 사용 방법
+
+### 1. 공격 시나리오 생성
+1. 왼쪽 사이드바에서 분석할 뉴스 선택
+2. **[공격 시나리오 기획 (3종)]** 버튼 클릭
+3. 3가지 전략 중 하나를 선택
+4. **[이 전략으로 공격 문자 생성]** 버튼 클릭
+
+### 2. 방어 분석
+- 오른쪽 패널에서 자동으로 **의도 분석** 및 **실시간 탐지** 수행
+- 탐지 점수가 낮을 경우 **[자가 진화 시작]** 버튼으로 즉시 재학습
+
+### 3. 보안 리포트 생성
+- **[리포트 생성 하기]** 버튼 클릭
+- PDF 다운로드 또는 미리보기
+
+## 🧠 핵심 기술
+
+### AI 모델
+- **텍스트 생성**: OpenAI GPT-4o (공격 시나리오 및 분석)
+- **분류 모델**: klue/roberta-base (한국어 BERT 변형)
+- **학습 방식**: Adversarial Training (적대적 학습)
+
+### 데이터베이스
+- **로컬**: SQLite3 (`smishing_db.db`)
+- **클라우드**: Supabase (선택 사항)
+
+### 프레임워크
+- **UI**: Streamlit
+- **ML**: PyTorch, Transformers (Hugging Face)
+
+## 📊 데이터베이스 스키마
+
+### `news_articles` (뉴스 기사)
+- 뉴스 제목, 내용, 출처, 날짜, 카테고리
+
+### `intents` (공격 시나리오)
+- 전략명, 심리 기제, 논리, 메타데이터
+
+### `attack_logs` (공격 로그)
+- 생성된 메시지, 탐지 점수, 사용 모델, 타임스탬프
+
+### `security_reports` (보안 리포트)
+- 시나리오명, 뉴스 제목, 리포트 텍스트, PDF 데이터
+
+## 🔬 모델 성능
+
+### 초기 모델 (Pre-trained)
+- **Precision**: 0.XX
+- **Recall**: 0.XX
+- **F1-Score**: 0.XX
+
+### 진화 후 모델 (Self-Evolved)
+- **Precision**: 0.XX → **0.XX**
+- **Recall**: 0.XX → **0.XX**
+- **F1-Score**: 0.XX → **0.XX**
+
+*(실제 성능은 `evaluate_model.py` 실행 후 업데이트 예정)*
+
+## 🛠️ 개발 및 디버그
+
+### 모델 평가
+```bash
+python evaluate_model.py
+```
+
+### 데이터셋 생성
+```bash
+python make_test_dataset.py
+```
+
+### 모호한 케이스 테스트
+```bash
+python test_ambiguous.py
+```
+
+## 🚀 Hugging Face Hub 배포
+
+학습된 모델을 공유하려면:
+```bash
+# Hugging Face CLI 로그인
+huggingface-cli login
+
+# 모델 업로드
+python scripts/deploy_model.py
+```
+
+배포된 모델: [donghyun95/smishing-detection-roberta-base](https://huggingface.co/donghyun95/smishing-detection-roberta-base)
+
+## ⚠️ 주의사항
+
+1. **윤리적 사용**: 이 시스템은 교육 및 연구 목적으로만 사용하세요.
+2. **API 비용**: OpenAI API 사용량에 따라 비용이 발생할 수 있습니다.
+3. **데이터 보안**: `.env` 파일은 절대 공개 저장소에 업로드하지 마세요.
+
+## 📝 라이선스
+
+MIT License
+
+## 👥 기여자
+
+- **Powered by**: OpenAI GPT-4, Hugging Face Transformers
+
+## 🙏 감사의 말
+
+- **KLUE Team**: 한국어 RoBERTa 모델 제공
+- **Hugging Face**: 모델 호스팅 및 인프라 지원
+- **OpenAI**: GPT-4 API 제공
+
+---
+
+**📧 문의**: gracechoek@github.com  
+**🔗 Repository**: https://github.com/gracechoek/Hackathon_Smishing

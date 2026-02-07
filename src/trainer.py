@@ -10,13 +10,12 @@ class SmishingTrainer:
         self.detector = detector
         self.model = detector.model
         self.tokenizer = detector.tokenizer
-        # [변경] 데모 효과를 위해 학습률을 2e-6 -> 5e-5로 대폭 상향 (즉각 반응 유도)
-        self.optimizer = AdamW(self.model.parameters(), lr=5e-5)
+        self.optimizer = AdamW(self.model.parameters(), lr=2e-5)
 
     def train_on_vulnerabilities(self, data_path="data/vulnerabilities.json"):
         """
         Detector를 통과해버린(공격 성공) 데이터셋만 골라 학습하여 방어력을 강화합니다.
-        (데모 효과를 위해 Target Probability(0.98)에 도달할 때까지 반복 학습합니다.)
+        (Normalization: 정상 데이터를 함께 학습하여 과적합/망각 방지)
         """
         if not os.path.exists(data_path):
             print(f"[!] 취약점 데이터셋을 찾을 수 없습니다: {data_path}")
@@ -25,50 +24,73 @@ class SmishingTrainer:
         with open(data_path, "r", encoding="utf-8") as f:
             vulnerabilities = json.load(f)
 
+        # ... (rest of function until TARGET_CONFIDENCE) ...
+        # [추가] 정상 데이터(Ham) 로드 - 균형 학습용 (Replay Buffer)
+        ham_samples = []
+        try:
+            with open("data/test_dataset.json", "r", encoding="utf-8") as f:
+                all_data = json.load(f)
+                ham_samples = [d['text'] for d in all_data if d['label'] == 0]
+                print(f"[*] 균형 학습을 위해 정상 데이터 {len(ham_samples)}개를 확보했습니다.")
+        except Exception as e:
+            print(f"[!] 정상 데이터 로드 실패 (Overfitting 위험): {e}")
+
         if not vulnerabilities:
-            print("[!] 새로운 취약점 데이터가 없어 학습을 건너뜁니다.")
             return
 
-        print(f"[*] 총 {len(vulnerabilities)}개의 탐지 취약점 발견. 모델 강화 학습 시작...")
+        print(f"[*] 총 {len(vulnerabilities)}개의 취약점 학습 시작 (with Regularization)...")
         
         self.model.train()
         
-        # [변경] "될 때까지 학습한다" (Target-based Overfitting)
-        TARGET_CONFIDENCE = 0.98
-        MAX_STEPS = 30
+        # [수정] 과도한 학습(1.0000)을 방지하기 위해 목표 신뢰도를 0.95로 하향
+        TARGET_CONFIDENCE = 0.95
+        MAX_STEPS = 20 # 스텝 수도 줄임
         
+        import random
+
         for item in vulnerabilities:
-            # 'attack_message' 또는 'generated_message' 중 존재하는 필드 사용
             text = item.get('generated_message', item.get('attack_message', ""))
             clean_text = self.detector.preprocess(text)
             
-            print(f"[*] '{text[:20]}...'에 대한 집중 학습 시작")
+            print(f"[*] '{text[:20]}...' 집중 학습 중...")
             
             for step in range(MAX_STEPS):
-                # 1. 현재 상태 평가 (Eval 모드 아님 - Train 모드에서 평가하여 그라디언트 유지)
+                # 1. 취약점(Spam) 학습
                 inputs = self.tokenizer(clean_text, return_tensors="pt", truncation=True, padding=True).to(self.detector.device)
-                label = torch.tensor([1]).to(self.detector.device) # Target: Smishing(1)
+                label = torch.tensor([1]).to(self.detector.device)
 
                 self.optimizer.zero_grad()
                 outputs = self.model(**inputs, labels=label)
+                loss_spam = outputs.loss
                 
-                # 현재 확률 확인
-                probs = torch.softmax(outputs.logits, dim=1)
+                # 2. [강화된 Regularization] 정상 데이터(Ham) 4배수 학습 (Overfitting 강력 억제)
+                loss_ham = 0
+                if ham_samples:
+                    # 안정성을 위해 정상 데이터를 4개 뽑아서 평균 Loss를 구함
+                    ham_batch = random.sample(ham_samples, k=min(len(ham_samples), 4))
+                    for h_text in ham_batch:
+                        h_inputs = self.tokenizer(h_text, return_tensors="pt", truncation=True, padding=True).to(self.detector.device)
+                        h_label = torch.tensor([0]).to(self.detector.device) # Target: Ham(0)
+                        
+                        h_outputs = self.model(**h_inputs, labels=h_label)
+                        loss_ham += h_outputs.loss
+                    
+                    # 4개분 Loss를 평균내거나 합산 (여기서는 합산하여 정상 데이터 비중을 높임)
+                    loss_ham = loss_ham / len(ham_batch) 
+
+                # Total Loss = Spam Loss + (Ham Loss * 2.0) : 정상 데이터 가중치 2배 부여
+                total_loss = loss_spam + (loss_ham * 2.0)
+                total_loss.backward()
+                self.optimizer.step()
+
+                # 확률 체크 (Spam에 대해서만)
+                probs = torch.softmax(self.model(**inputs).logits, dim=1)
                 smishing_prob = probs[0][1].item()
                 
                 if smishing_prob >= TARGET_CONFIDENCE:
-                    print(f"    -> [Success] Step {step}: 확률 {smishing_prob:.4f} 도달! (목표 달성)")
+                    print(f"    -> [Success] Step {step}: 확률 {smishing_prob:.4f} 도달!")
                     break
-                
-                # 2. 학습 (Backprop)
-                loss = outputs.loss
-                loss.backward()
-                self.optimizer.step()
 
-                if step % 5 == 0:
-                    print(f"    -> [Step {step}] Prob({smishing_prob:.4f}) / Loss({loss.item():.4f}) - 학습 진행 중...")
-
-        # [수정] 학습된 가중치를 메인 모델 경로에 덮어씌움 (앱 재실행 시 반영되도록)
         self.save_model()
 
     def save_model(self):
