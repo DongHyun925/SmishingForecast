@@ -1,6 +1,6 @@
 <div align="center">
 
-# � Smishing Forecast
+#  Smishing Forecast
 
 ### *Self-Evolving AI-Powered Smishing Defense System*
 
@@ -178,22 +178,6 @@ Hackathon_Smishing/
 
 
 
-## 🛠️ 개발 및 디버그
-
-### 모델 평가
-```bash
-python evaluate_model.py
-```
-
-### 데이터셋 생성
-```bash
-python make_test_dataset.py
-```
-
-### 모호한 케이스 테스트
-```bash
-python test_ambiguous.py
-```
 
 ## 🚀 Hugging Face Hub 배포
 
