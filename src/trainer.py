@@ -98,6 +98,9 @@ class SmishingTrainer:
         # detector가 로드하는 경로("models/smishing_detector_model.pth")에 저장해야 함.
         save_path = "models/smishing_detector_model.pth"
         
+        if os.path.dirname(save_path):
+            os.makedirs(os.path.dirname(save_path), exist_ok=True)
+            
         # 전체 모델(가중치) 저장
         # HuggingFace save_pretrained 대신 torch.save 사용 (detector.py 로딩 방식과 통일)
         torch.save(self.model.state_dict(), save_path)
