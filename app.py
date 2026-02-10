@@ -32,8 +32,42 @@ def validate_attack_message(message):
 # --- 페이지 설정 ---
 st.set_page_config(page_title="Adversarial Smishing Defense AI", layout="wide")
 
-st.title("🛡️ 자가 진화형 지능형 스미싱 방어 시스템")
-st.markdown("최신 뉴스를 기반으로 공격 시나리오를 예측하고, 의도를 분석하여 방어력을 스스로 강화하는 AI 데모입니다.")
+
+# 타이틀 섹션 (CSS 스타일링)
+st.markdown("""
+    <style>
+    .main-title {
+        font-family: "Arial Black", sans-serif;
+        font-size: 60px;
+        font-weight: 900;
+        letter-spacing: -2px;
+        background: linear-gradient(90deg, #00C6FF 0%, #343cc3 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0px;
+        padding-top: 10px;
+        text-align: center; 
+    }
+    .sub-title {
+        font-size: 20px;
+        color: #555555;
+        font-weight: 600;
+        text-align: center; 
+        margin-top: -10px;
+        margin-bottom: 20px;
+    }
+    </style>
+    <div class="main-title">Smishing Forecast</div>
+    <div class="sub-title"> 자가 진화형 지능형 스미싱 방어 시스템</div>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div style='text-align: center; color: #666; margin-bottom: 30px;'>
+    최신 뉴스를 기반으로 공격 시나리오를 예측하고, 의도를 분석하여 방어력을 스스로 강화하는 AI 데모입니다.
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown("---")
 
 # --- 세션 상태 초기화 ---
 if 'initialized' not in st.session_state:
@@ -90,7 +124,7 @@ col1, col2 = st.columns(2)
 
 # --- LEFT: 공격 시뮬레이션 (Red Team) ---
 with col1:
-    st.header("😈 Attack Simulation (Red Team)")
+    st.header("🔴 Attack Simulation (Red Team)")
     st.info(f"**선택된 뉴스**: {selected_news['context']['news_title']}")
     if st.button("🚀 공격 시나리오 기획 (3종)", use_container_width=True):
         with st.status("사회공학적 심리 분석 및 전략 수립 중...", expanded=True) as status:
@@ -202,7 +236,7 @@ with col1:
 
 # --- RIGHT: 방어 및 분석 (Blue Team) ---
 with col2:
-    st.header("🛡️ Intelligent Defense (Blue Team)")
+    st.header("🔵 Intelligent Defense (Blue Team)")
     
     # 유효한 공격일 때만 분석 진행
     if 'current_attack' in st.session_state and st.session_state.current_attack['is_valid']:
