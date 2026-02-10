@@ -173,7 +173,9 @@ Hackathon_Smishing/
 - **Recall**: 1.00 → **1.00**
 - **F1-Score**: 0.67 → **1.00**
 
-*(※ 위 성능은 합성 데이터셋(Synthetic Testset) 100건에 대한 평가 결과입니다.)*
+
+*(※ 위 성능은 합성 데이터셋 100건에 대한 평가 결과입니다. 학습 데이터와 동일한 생성 모델(GPT-4)로 만들어진 데이터이기에 높은 성능이 측정되었으며, 실제 스미싱 문자(Wild/Real-world)에 대해서는 성능 하락(Overfitting to Synthetic Distribution)이 발생할 수 있습니다.)*
+
 
 
 ## 🛠️ 개발 및 디버그
