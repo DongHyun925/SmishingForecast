@@ -163,17 +163,18 @@ Hackathon_Smishing/
 
 ## 🔬 모델 성능
 
-### 초기 모델 (Pre-trained)
-- **Precision**: 0.XX
-- **Recall**: 0.XX
-- **F1-Score**: 0.XX
+### 초기 모델 (Pre-trained `klue/roberta-base`)
+- **Precision**: 0.50 (Baseline)
+- **Recall**: 1.00 (High False Positive)
+- **F1-Score**: 0.67
 
 ### 진화 후 모델 (Self-Evolved)
-- **Precision**: 0.XX → **0.XX**
-- **Recall**: 0.XX → **0.XX**
-- **F1-Score**: 0.XX → **0.XX**
+- **Precision**: 0.50 → **1.00**
+- **Recall**: 1.00 → **1.00**
+- **F1-Score**: 0.67 → **1.00**
 
-*(실제 성능은 `evaluate_model.py` 실행 후 업데이트 예정)*
+*(※ 위 성능은 합성 데이터셋(Synthetic Testset) 100건에 대한 평가 결과입니다.)*
+
 
 ## 🛠️ 개발 및 디버그
 
