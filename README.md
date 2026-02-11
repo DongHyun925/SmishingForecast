@@ -70,6 +70,10 @@ cp .env.example .env
 `.env` 파일 내용:
 ```
 OPENAI_API_KEY=your_actual_openai_api_key
+
+# Naver Search API (For News Crawling)
+NAVER_CLIENT_ID=your_naver_client_id
+NAVER_CLIENT_SECRET=your_naver_client_secret
 ```
 
 ### 4. 사전 학습된 모델 다운로드 (선택 사항)
