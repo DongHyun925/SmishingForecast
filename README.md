@@ -9,6 +9,8 @@
 [![Transformers](https://img.shields.io/badge/🤗-Transformers-yellow.svg)](https://huggingface.co/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
+![Smishing Forecast Screenshot](assets/main_screenshot.png)
+
 </div>
 
 ---
