@@ -218,7 +218,3 @@ MIT License
 - **Hugging Face**: 모델 호스팅 및 인프라 지원
 - **OpenAI**: GPT-4 API 제공
 
----
-
-**📧 문의**: gracechoek@github.com  
-**🔗 Repository**: https://github.com/gracechoek/Hackathon_Smishing
