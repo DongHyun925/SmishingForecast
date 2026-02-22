@@ -15,7 +15,7 @@
 
 ---
 
-## � Team Members
+## 👥 Team Members
 
 | 이름 | 이메일 |
 |------|--------|
@@ -264,5 +264,5 @@ MIT License
 
 ---
 
-**� 문의**: gracechoek@github.com  
+**📧 문의**: gracechoek@github.com  
 **🔗 Repository**: https://github.com/DongHyun925/SmishingForecast
