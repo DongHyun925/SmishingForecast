@@ -174,10 +174,33 @@ Hackathon_Smishing/
 
 ## 🧠 핵심 기술
 
+### 시스템 아키텍처
+
+```mermaid
+flowchart TD
+    A["🌐 Google News RSS\n주요뉴스 / 경제 / 사회"] --> C
+    B["📰 Naver News API\n사회적 맥락 키워드"] --> C
+    C["🔄 Incremental Merge\n중복 제거 & 증분 저장"] --> D["📄 smishing_context_data.jsonl\n뉴스 인텔리전스 DB"]
+
+    D --> E["🔴 LLM Planner\nGPT-4o 기반 공격 전략 수립\n3종 시나리오 도출"]
+    E --> F["💬 GPT-4o Generator\n스미싱 문자 자동 생성"]
+
+    F --> G["🔵 RoBERTa Detector\nklue/roberta-base Fine-tuned\n스미싱 탐지 점수 계산"]
+    G --> H{"탐지 성공?"}
+
+    H -- "✅ 탐지됨" --> I["📊 Intent Analyzer\nSOC 표준 위협 프로파일링"]
+    H -- "❌ 미탐지" --> J["🧬 Adversarial Trainer\nReplay Buffer 자가 진화 학습"]
+
+    J --> K["💉 Digital Vaccine\n강화된 모델 가중치 배포"]
+    K --> G
+
+    I --> L["📄 Report Generator\nPDF / Markdown 보안 리포트"]
+```
+
 ### AI 모델
 - **텍스트 생성**: OpenAI GPT-4o (공격 시나리오 및 분석)
-- **분류 모델**: klue/roberta-base (한국어 BERT 변형)
-- **학습 방식**: Adversarial Training + Replay Buffer
+- **시작 모델**: `klue/roberta-base` + GPT-4o 합성 데이터 100건으로 Fine-tuned된 가중치 (`smishing_detector_model.pth`)
+- **학습 방식**: Adversarial Training + Replay Buffer (자가 진화)
 
 ### 뉴스 크롤링 ✨ New
 - **Primary**: Google News RSS (주요뉴스 / 경제 / 사회 섹션, 트렌딩 자동 수집)
