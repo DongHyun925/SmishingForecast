@@ -31,10 +31,6 @@ def validate_attack_message(message):
 # --- 페이지 설정 ---
 st.set_page_config(page_title="Adversarial Smishing Defense AI", layout="wide")
 
-<<<<<<< Updated upstream
-st.title("🛡️ 자가 진화형 지능형 스미싱 방어 시스템")
-st.markdown("최신 뉴스를 기반으로 공격 시나리오를 예측하고, 의도를 분석하여 방어력을 스스로 강화하는 AI 데모입니다.")
-=======
 
 # 타이틀 섹션 (CSS 스타일링)
 st.markdown("""
@@ -152,7 +148,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.markdown("---")
->>>>>>> Stashed changes
 
 # --- 세션 상태 초기화 ---
 if 'initialized' not in st.session_state:
@@ -163,6 +158,10 @@ if 'initialized' not in st.session_state:
         # [변경] 학습 모델의 특성(Spam avg=0.72)을 고려하여 임계값을 0.5로 조정
         st.session_state.detector = SmishingDetector(threshold=0.5)
         st.session_state.reporter = SecurityReportGenerator()
+        
+        # database_manager 임포트 및 초기화 (메인 브랜치에서 가져옴)
+        from database_manager import DatabaseManager
+        st.session_state.db = DatabaseManager()
         st.session_state.initialized = True
     
     # [수정] 코드가 변경되었을 때 최신 로직을 반영하기 위해 Trainer는 매번 새로 생성
@@ -172,8 +171,6 @@ if 'initialized' not in st.session_state:
 
 # --- 사이드바: 데이터 로드 ---
 from email.utils import parsedate_to_datetime
-
-# ... (imports)
 
 # --- 사이드바: Global Security Monitor ---
 st.sidebar.title("🌐 Global Security Monitor")
@@ -248,6 +245,7 @@ if 'db' in st.session_state:
     
     # [신규] 하위 섹션: Intelligence Source
     st.sidebar.subheader("📂 Intelligence Source")
+
 # [개선] 데이터 파일 경로 절대 경로화 (Persistence 보장)
 base_dir = os.path.dirname(os.path.abspath(__file__))
 data_path = os.path.join(base_dir, "data", "smishing_context_data.jsonl")
@@ -283,10 +281,6 @@ if news_data:
     # 안정적인 정렬 (Timsort는 기존 순서 유지)
     news_data.sort(key=get_sort_key, reverse=True)
 
-<<<<<<< Updated upstream
-    st.sidebar.success(f"{len(news_data)}개의 뉴스 데이터를 로드했습니다.")
-    selected_news = st.sidebar.selectbox("분석할 뉴스를 선택하세요 (최신순)", news_data, 
-=======
     # [DB Sync] 로드된 뉴스 데이터를 DB에 저장 (중복 자동 무시)
     if 'db' in st.session_state:
         for news in news_data:
@@ -294,7 +288,6 @@ if news_data:
 
     st.sidebar.success(f"{len(news_data)}개의 위협 피드 확보")
     selected_news = st.sidebar.selectbox("기사 분석 및 위협 모델링 선택", news_data, 
->>>>>>> Stashed changes
                                         format_func=lambda x: f"[{x['context']['category']}] {x['context']['news_title']}")
 else:
     st.sidebar.error("데이터 피드를 로드할 수 없습니다.")
@@ -305,14 +298,6 @@ col1, col2 = st.columns(2)
 
 # --- LEFT: 위협 시뮬레이션 (Threat Simulation) ---
 with col1:
-<<<<<<< Updated upstream
-    st.header("😈 Attack Simulation (Red Team)")
-    st.info(f"**선택된 뉴스**: {selected_news['context']['news_title']}")
-    if st.button("🚀 공격 시나리오 기획 (3종)", use_container_width=True):
-        with st.status("사회공학적 심리 분석 및 전략 수립 중...", expanded=True) as status:
-            # 1. 3가지 시나리오 기획
-            strategies = st.session_state.planner.plan_multiple_scenarios(selected_news, count=3)
-=======
     st.header("🔴 Threat Modeling (Red Team)")
     
     # 지능 분석 깊이 표시 (SOC 상태 배지) - "버튼 클릭 액션" 여부로 판단
@@ -408,7 +393,6 @@ with col1:
                 processed_item=upgraded_item,
                 used_patterns=history
             )
->>>>>>> Stashed changes
             
             if not strategies:
                 status.update(label="시나리오 기획 실패", state="error", expanded=True)
@@ -467,9 +451,6 @@ with col1:
         st.divider()
         if attack['is_valid']:
             st.success(f"**[전략] {attack['strategy']['strategy_name']}**")
-<<<<<<< Updated upstream
-            st.chat_message("user", avatar="😈").write(f"**생성된 적대적 문구:**\n\n> {attack['message']}")
-=======
             
             # [기능 개선] 모든 전략에 대해 상세 로드맵/논리 표시
             st.info("💀 **Attack Roadmap / Logic (공격 설계도)**")
@@ -491,7 +472,6 @@ with col1:
                 st.info(roadmap_text) # 일반 텍스트면 그냥 박스로 표시
 
             st.chat_message("user").write(f"**생성된 적대적 문구:**\n\n> {attack['message']}")
->>>>>>> Stashed changes
         else:
             st.error(f"⚠️ 생성 실패: {attack['reason']}")
             st.warning("안전 가이드라인 위반 등으로 생성이 거부되었습니다.")
@@ -499,11 +479,7 @@ with col1:
 
 # --- RIGHT: 위협 분석 및 관제 (Intelligence & Defense) ---
 with col2:
-<<<<<<< Updated upstream
-    st.header("🛡️ Intelligent Defense (Blue Team)")
-=======
     st.header("🔵 Adaptive Defense (Blue Team)")
->>>>>>> Stashed changes
     
     # 유효한 공격일 때만 분석 진행
     if 'current_attack' in st.session_state and st.session_state.current_attack['is_valid']:
