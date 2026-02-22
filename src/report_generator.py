@@ -71,15 +71,18 @@ class SecurityReportGenerator:
            - 위협 등급: {threat_level} (점수: {risk_score}/5)
 
         [리포트 작성 지침]
-        - **문서 형식**: 정부 기관의 공식 공문 스타일.
+        - **문서 형식**: 국가 사이버 안보 센터 및 금융 보안원 표준 공문 스타일.
         - **섹션 구분**:
-           1. **개요 (Executive Summary)**: 뉴스 이슈와 결합된 스미싱 등장 배경을 한 문단으로 요약.
-           2. **상세 분석 (Detailed Analysis)**: 공격자가 사용한 심리적 트리거와 문구의 특징 분석.
-           3. **위험성 평가 (Risk Assessment)**: 피해 예상 규모 및 위험도.
-           4. **대응 수칙 (Action Items)**: 구체적인 예방 및 대응 방법 3~4가지.
+           1. **개요 (Executive Summary)**: 뉴스 이슈와 결합된 스미싱 등장 배경 및 침해 사고 개요.
+           2. **기술적 분석 (Technical Analysis)**: 공격 수법(TTPs), 사용된 심리적 트리거, 사회공학적 기법의 정밀 분석.
+           3. **침해 지표 (Indicators of Compromise, IoC)**: 
+              - **Network**: 의심 도메인 패턴, 예상 C2 서버 유형.
+              - **Content**: 핵심 유도 키워드, 악성 URL 단축 패턴.
+           4. **위험성 평가 (Risk Assessment)**: 기관/기업 및 개인에 미치는 영향도 평가.
+           5. **기관용 대응 수칙 (Institutional Mitigation)**: 인프라 차단 설정(FW/IPS), 보안 장비 탐지 룰(YARA/Snort) 반영용 가이드.
         
         결과물은 마크다운이나 특수문자 없이, 섹션 제목과 본문 내용이 명확히 구분되는 **줄글 텍스트**로 작성하십시오.
-        (섹션 제목 앞에는 '## ' 같은 마크다운 쓰지 말고, [개요], [상세 분석] 처럼 대괄호를 사용해 구분하세요.)
+        (섹션 제목 앞에는 '## ' 같은 마크다운 쓰지 말고, [개요], [기술적 분석] 처럼 대괄호를 사용해 구분하세요.)
         """
 
         try:
@@ -136,9 +139,11 @@ class SecurityReportGenerator:
             # 섹션 제목 감지 (대괄호로 감싸진 경우)
             if line.startswith('[') and line.endswith(']'):
                 pdf.ln(5)
-                pdf.set_font('NanumGothic', 'B', 14)
-                pdf.set_text_color(0, 51, 102) # 남색 계열
-                pdf.cell(0, 10, line.replace('[', '').replace(']', ''), align='L', new_x="LMARGIN", new_y="NEXT")
+                # SOC 리포트 느낌의 테두리 강조 처리
+                pdf.set_fill_color(0, 51, 102)
+                pdf.set_text_color(255, 255, 255)
+                pdf.set_font('NanumGothic', 'B', 12)
+                pdf.cell(0, 8, line.replace('[', '').replace(']', ''), align='L', fill=True, new_x="LMARGIN", new_y="NEXT")
                 pdf.set_text_color(0, 0, 0)
                 pdf.set_font('NanumGothic', '', 11)
             else:

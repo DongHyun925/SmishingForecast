@@ -1,0 +1,255 @@
+{
+    "scenarios": [
+        {
+            "intent_id": "SOC-01",
+            "intent_name": "지인 사칭 (경조사/안부)",
+            "description": "가족, 친구, 직장 동료 등 지인을 사칭하여 개인적인 소식을 미끼로 접근하는 수법. 모바일 청첩장, 부고 알림, 사진 확인 등을 유도함.",
+            "psychological_trigger": "친밀감, 호기심, 사회적 도리",
+            "severity_score": 3,
+            "legal_risks": [
+                "형법상 사기"
+            ],
+            "registered_at": "2026-02-02"
+        },
+        {
+            "intent_id": "FIN-01",
+            "intent_name": "정부/공공기관 사칭 (경제적 혜택)",
+            "description": "국세청, 보건복지부 등 정부 기관을 사칭하여 재난지원금, 근로장려금, 미수령 환급금 등 금전적 이익을 제공한다고 속여 접속을 유도함.",
+            "psychological_trigger": "보상 심리, 경제적 안도감",
+            "severity_score": 3,
+            "legal_risks": [
+                "형법상 사기"
+            ],
+            "registered_at": "2026-02-02"
+        },
+        {
+            "intent_id": "LOG-01",
+            "intent_name": "물류/운송 사칭 (배송 사고)",
+            "description": "우체국이나 택배사를 사칭하여 주소지 불명, 통관 지연, 배송 주소지 변경 등을 요구하는 수법. 실생활의 불편함을 즉시 해결하려는 심리를 이용함.",
+            "psychological_trigger": "생활 불편 해소, 조급함",
+            "severity_score": 3,
+            "legal_risks": [
+                "형법상 사기"
+            ],
+            "registered_at": "2026-02-02"
+        },
+        {
+            "intent_id": "LAW-01",
+            "intent_name": "공권력 사칭 (심리적 압박)",
+            "description": "검찰, 경찰, 금감원 등을 사칭하여 범죄 연루, 명의 도용, 출석 요구 등을 통보함. 법적 처벌에 대한 두려움을 극대화하여 판단력을 흐리게 함.",
+            "psychological_trigger": "공포, 처벌 회피",
+            "severity_score": 3,
+            "legal_risks": [
+                "형법상 사기"
+            ],
+            "registered_at": "2026-02-02"
+        },
+        {
+            "intent_id": "FIN-02",
+            "intent_name": "금융/결제 사칭 (자산 보호)",
+            "description": "카드사나 은행을 사칭하여 타인에 의한 부정 결제 승인, 계좌 이상 거래 감지 등을 알림. 자산 손실을 막아야 한다는 방어 기제를 자극함.",
+            "psychological_trigger": "손실 회피, 자산 방어",
+            "severity_score": 3,
+            "legal_risks": [
+                "형법상 사기"
+            ],
+            "registered_at": "2026-02-02"
+        },
+        {
+            "intent_id": "NEW-06",
+            "intent_name": "건강검진 사칭 (긴급성 강조)",
+            "description": "건강 검진 센터를 사칭하여 건강 관련 긴급 상황을 통보하고, 링크를 통해 조치를 취할 것을 유도하는 수법. 건강에 대한 걱정을 유발하여 빠른 행동을 취하도록 압박함.",
+            "psychological_trigger": "LLM 분석 필요",
+            "severity_score": 3,
+            "legal_risks": [
+                "형법상 사기"
+            ],
+            "registered_at": "2026-02-02"
+        },
+        {
+            "intent_id": "NEW-07",
+            "intent_name": "유기동물 보호 사칭 (기부 요청)",
+            "description": "지역 동물 보호 협회를 사칭하여 유기동물 구조 활동을 이유로 기부를 부탁하는 방식의 사기 수법. 따뜻한 마음을 가진 개인의 도움을 호소하여 기부를 유도함.",
+            "psychological_trigger": "LLM 분석 필요",
+            "severity_score": 3,
+            "legal_risks": [
+                "형법상 사기"
+            ],
+            "registered_at": "2026-02-02"
+        },
+        {
+            "intent_id": "NEW-08",
+            "intent_name": "군사/국방 사칭 (정책 업데이트)",
+            "description": "군대나 국방부를 사칭하여 새로운 정책이나 정보 업데이트를 핑계로 링크에 접속하도록 유도하는 수법. 군인과 관련된 정보의 중요성을 강조하여 즉각적인 행동을 유도함.",
+            "psychological_trigger": "LLM 분석 필요",
+            "severity_score": 3,
+            "legal_risks": [
+                "형법상 사기"
+            ],
+            "registered_at": "2026-02-02"
+        },
+        {
+            "intent_id": "NEW-09",
+            "intent_name": "긴급 의료 상황 사칭",
+            "description": "의료 시설을 사칭하여 가족의 교통사고나 긴급 의료 상황을 이유로 문서 확인이나 링크 접속을 요구하는 수법. 가족의 안전과 건강에 대한 걱정을 유발하여 빠른 행동을 유도함.",
+            "psychological_trigger": "LLM 분석 필요",
+            "severity_score": 3,
+            "legal_risks": [
+                "형법상 사기"
+            ],
+            "registered_at": "2026-02-02"
+        },
+        {
+            "intent_id": "NEW-10",
+            "intent_name": "유명인 팬미팅 사칭",
+            "description": "유명인이나 인플루언서를 사칭하여 비밀 팬미팅이나 특별 이벤트에 초대장을 받았다고 속이고, 링크를 클릭하도록 유도하는 수법. 팬이나 팔로워의 기대감과 호기심을 자극하여 행동을 유도함.",
+            "psychological_trigger": "LLM 분석 필요",
+            "severity_score": 3,
+            "legal_risks": [
+                "형법상 사기"
+            ],
+            "registered_at": "2026-02-02"
+        },
+        {
+            "intent_id": "NEW-11",
+            "intent_name": "비즈니스 성과 사칭",
+            "description": "동업자, 직장 동료, 비즈니스 파트너 등을 사칭하여 최근 업무 성과와 관련된 조언이나 정보를 제공한다고 하며, 첨부파일 다운로드나 링크 클릭을 유도하는 수법. 업무 효율성과 성공에 대한 관심을 자극하여 행동을 유도함.",
+            "psychological_trigger": "LLM 분석 필요",
+            "severity_score": 3,
+            "legal_risks": [
+                "형법상 사기"
+            ],
+            "registered_at": "2026-02-02"
+        },
+        {
+            "intent_id": "NEW-12",
+            "intent_name": "개인정보 유출 경고 사칭",
+            "description": "개인정보가 다크웹에서 거래되고 있다는 위협적인 정보를 제공하여 빠른 조치를 유도하는 수법. 보안 소프트웨어 설치를 위장한 링크를 통해 악성 프로그램 설치를 유도할 가능성이 있음.",
+            "psychological_trigger": "LLM 분석 필요",
+            "severity_score": 3,
+            "legal_risks": [
+                "형법상 사기"
+            ],
+            "registered_at": "2026-02-02"
+        },
+        {
+            "intent_id": "NEW-13",
+            "intent_name": "긴급 지원 요청 사칭",
+            "description": "개인적인 사고나 긴급 상황을 사칭하여 도움이나 금전적 지원을 요청하는 수법. 수신자의 동정심을 자극하고 긴박한 상황을 강조하여, 신속한 금전적 지원을 유도함.",
+            "psychological_trigger": "LLM 분석 필요",
+            "severity_score": 3,
+            "legal_risks": [
+                "형법상 사기"
+            ],
+            "registered_at": "2026-02-02"
+        },
+        {
+            "intent_id": "NEW-14",
+            "intent_name": "가족 사칭 긴급 상황",
+            "description": "가족 구성원을 사칭하여 긴급한 상황을 연출하고, 애정과 신뢰를 이용해 무심코 링크를 클릭하거나 앱을 설치하도록 유도하는 수법. 가족에 대한 걱정을 자극하여 빠르게 행동하게 만듦.",
+            "psychological_trigger": "LLM 분석 필요",
+            "severity_score": 4,
+            "legal_risks": [
+                "정보통신망이용촉진및정보보호등에관한법률",
+                "형법상 사기",
+                "사전자기록등위작죄"
+            ],
+            "registered_at": "2026-02-02"
+        },
+        {
+            "intent_id": "NEW-15",
+            "intent_name": "간단한 죄책감 유도 사기",
+            "description": "아무 맥락 없이 찾아온 문자를 통해 수신자에게 무언가 잘못된 것을 응시하게 하거나, 궁금증을 자극하여 후속 조처를 유도하려는 시도를 함. 이는 수신자가 메시지에 답하거나 잘못된 링크 또는 설치를 하게 만들 가능성을 높임.",
+            "psychological_trigger": "LLM 분석 필요",
+            "severity_score": 2,
+            "legal_risks": [
+                "형법상 사기",
+                "정보통신망 이용촉진 및 정보보호 등에 관한 법률"
+            ],
+            "registered_at": "2026-02-02"
+        },
+        {
+            "intent_id": "NEW-16",
+            "intent_name": "불명확한 죄송 사칭 의도",
+            "description": "해외 또는 미상의 발신자가 아무 맥락 없이 '요청을 수행할 수 없습니다'라는 메시지를 보내서 수신자가 호기심을 갖고 후속 조치를 유도하려는 시도. 이는 추가적인 공격을 위한 첫 단계로 활용될 가능성이 있으며, 수신자가 자동으로 반응하도록 심리적 압박을 가할 수 있음.",
+            "psychological_trigger": "LLM 분석 필요",
+            "severity_score": 2,
+            "legal_risks": [
+                "형법상 사기"
+            ],
+            "registered_at": "2026-02-02"
+        },
+        {
+            "intent_id": "NEW-17",
+            "intent_name": "쇼핑 축제 사칭 보상",
+            "description": "어떠한 유명 쇼핑 행사나 이벤트의 사후 지원팀을 사칭하여 감사의 표시로 보상 쿠폰이 발행될 수 있다고 하고, 고객센터라는 가짜 홈페이지에 접속을 유도하여 개인정보를 탈취하거나 추가적인 악성 활동을 위한 단계를 구축하는 수법.",
+            "psychological_trigger": "LLM 분석 필요",
+            "severity_score": 3,
+            "legal_risks": [
+                "정보통신망법",
+                "형법상 사기"
+            ],
+            "registered_at": "2026-02-02"
+        },
+        {
+            "intent_id": "NEW-18",
+            "intent_name": "선거 캠프 사칭 정보 유출",
+            "description": "정치 캠프나 후보자를 사칭하여 선거 관련 내부 정보나 충격적인 사실이 유출되었다고 주장하며, 특정 번호로 연락을 유도하여 개인정보를 탈취하거나 추가적인 소통을 유도함. 이는 수신자의 정치적 호기심과 충격을 자극하여 행동을 유도함.",
+            "psychological_trigger": "LLM 분석 필요",
+            "severity_score": 4,
+            "legal_risks": [
+                "정보통신망법 위반",
+                "형법상 사기"
+            ],
+            "registered_at": "2026-02-02"
+        },
+        {
+            "intent_id": "NEW-19",
+            "intent_name": "계약 관련 긴급 상황 사칭",
+            "description": "직장 동료 사칭하여 계약서와 관련된 긴급 사항을 이유로 문서를 요청하는 수법. 업무와 관련된 긴급한 문제를 표방하여 수신자의 즉각적 반응을 유도함.",
+            "psychological_trigger": "LLM 분석 필요",
+            "severity_score": 3,
+            "legal_risks": [
+                "형법상 사기",
+                "정보통신망법"
+            ],
+            "registered_at": "2026-02-02"
+        },
+        {
+            "intent_id": "NEW-20",
+            "intent_name": "내부 직원을 사칭한 보안 이슈 경고",
+            "description": "특정 기관 내 직원의 이메일을 가장하여 고객이나 당사자의 주의를 끌기 위한 수법. 이는 수신자를 속여 해당 이메일에 응답하거나 추가 정보를 제공하도록 유도하며, 이후 악성 프로그램 설치나 개인정보 탈취를 위한 추가 단계를 계획할 가능성이 있음.",
+            "psychological_trigger": "LLM 분석 필요",
+            "severity_score": 4,
+            "legal_risks": [
+                "정보통신망법",
+                "형법상 사기"
+            ],
+            "registered_at": "2026-02-02"
+        },
+        {
+            "intent_id": "NEW-21",
+            "intent_name": "전기차 보조금 사칭",
+            "description": "전기차 보조금과 관련된 업데이트를 당장 확인해야 한다고 속여 특정 이메일을 통해 문의를 유도하는 수법. 이는 전기차 보조금과 관련된 경제적 이익을 강조하여 사람들의 관심을 끌고, 이메일을 통해 개인정보를 수집하려는 의도가 있음.",
+            "psychological_trigger": "LLM 분석 필요",
+            "severity_score": 3,
+            "legal_risks": [
+                "정보통신망법 위반",
+                "형법상 사기"
+            ],
+            "registered_at": "2026-02-02"
+        },
+        {
+            "intent_id": "NEW-22",
+            "intent_name": "작업 관련 정보 제공 사칭",
+            "description": "직장 동료를 사칭하여 개인의 관심을 끌 수 있는 정보를 미끼로 연락을 유도하는 수법. 통해 악의적 목적으로 개인 정보를 수집하거나 추가적인 피싱 공격을 계획할 수 있음.",
+            "psychological_trigger": "LLM 분석 필요",
+            "severity_score": 3,
+            "legal_risks": [
+                "정보통신망법",
+                "형법상 사기"
+            ],
+            "registered_at": "2026-02-02"
+        }
+    ]
+}

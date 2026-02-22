@@ -65,16 +65,18 @@ class IntentAnalyzer:
         
         result = json.loads(response.choices[0].message.content)
 
-        # 신종 수법 등록 시 새로운 필드들도 함께 저장되도록 보완
+        # [규격화] 신종 수법 등록 시 모든 필드 필수 포함 (UI 일관성 확보)
         if result['matched_intent_id'] == "NEW":
             new_id = f"NEW-{len(self.scenario_bank) + 1:02d}"
+            from datetime import datetime
             new_entry = {
                 "intent_id": new_id,
                 "intent_name": result['intent_name'],
                 "description": result['description'],
+                "psychological_trigger": result.get('reason', 'LLM 분석됨'), # 상세 근거를 트리거로 활용
                 "severity_score": result['severity_score'],
                 "legal_risks": result['legal_risks'],
-                "registered_at": "2026-02-02" # 동적 날짜 권장
+                "registered_at": datetime.now().strftime('%Y-%m-%d')
             }
             self._update_bank(new_entry)
             result['matched_intent_id'] = new_id

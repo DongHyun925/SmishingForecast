@@ -6,9 +6,50 @@ import re
 import random
 from datetime import datetime
 from dotenv import load_dotenv
+from bs4 import BeautifulSoup
+import feedparser
+import urllib.parse
 
 # 환경 변수 로드
 load_dotenv()
+
+class GoogleNewsRssCrawler:
+    """구글 뉴스 RSS를 통해 위협 정보를 수집합니다. (시스템 아키텍처 사양)"""
+    def __init__(self):
+        # [개선] 데이터 파일 저장 경로를 절대 경로로 고정 (Persistence 보장)
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        self.save_dir = os.path.abspath(os.path.join(current_dir, "..", "data"))
+        # 구글 뉴스 섹션별 RSS URL
+        self.sections = {
+            "TOP_STORIES": "https://news.google.com/rss?hl=ko&gl=KR&ceid=KR:ko",
+            "BUSINESS": "https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=ko&gl=KR&ceid=KR:ko",
+            "SOCIETY": "https://news.google.com/rss/headlines/section/topic/SOCIETY?hl=ko&gl=KR&ceid=KR:ko"
+        }
+
+    def fetch_section(self, section_key):
+        url = self.sections.get(section_key)
+        if not url: return []
+        
+        try:
+            feed = feedparser.parse(url)
+            results = []
+            for entry in feed.entries:
+                # RSS 데이터 정규화
+                item = {
+                    "title": entry.title,
+                    "link": entry.link,
+                    "description": entry.get('summary', ''),
+                    "pubDate": entry.get('published', datetime.now().strftime('%a, %d %b %Y %H:%M:%S +0900'))
+                }
+                results.append(item)
+            return results
+        except Exception as e:
+            print(f"    [!] Google RSS ({section_key}) 에러: {e}")
+            return []
+
+    def fetch_news(self, keyword):
+        # 기존 키워드 검색기능 (하위 호환성 유지)
+        url = f"https://news.google.com/rss/search?q={urllib.parse.quote(keyword)}&hl=ko&gl=KR&ceid=KR:ko"
 
 class NaverApiCrawler:
     def __init__(self):
@@ -21,17 +62,12 @@ class NaverApiCrawler:
 
         self.base_url = "https://openapi.naver.com/v1/search/news.json"
         
-        # 저장 경로 설정 (src 기준 상위의 data 폴더)
-        self.save_dir = os.path.join(os.path.dirname(__file__), "..", "data")
+        # [개선] 데이터 파일 저장 경로를 절대 경로로 고정 (Persistence 보장)
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        self.save_dir = os.path.abspath(os.path.join(current_dir, "..", "data"))
         if not os.path.exists(self.save_dir):
             os.makedirs(self.save_dir)
 
-        # 트렌드 분석용 키워드
-        self.trend_keywords = {
-            "method": ["부고", "청첩장", "택배", "건강검진", "해외결제", "카드개설", "대출", "투자", "알바", "납치", "영상통화", "딥페이크"],
-            "target": ["자녀", "딸", "아들", "엄마", "아빠", "친구", "직장상사", "검찰", "경찰", "금융감독원", "은행"],
-            "channel": ["카카오톡", "텔레그램", "문자", "SMS", "페이스북", "인스타", "DM"]
-        }
 
     def _get_headers(self):
         return {
@@ -110,6 +146,66 @@ class NaverApiCrawler:
             analysis_result[category + "s"] = sorted(found_words, key=lambda x: x[1], reverse=True)
         return analysis_result
 
+    def _fetch_full_content(self, url):
+        """기사 링크에서 전문을 크롤링합니다."""
+        if not url or url.startswith("javascript:"):
+            return None
+            
+        try:
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            }
+            # allow_redirects=True는 구글 뉴스 RSS 등 리다이렉트 링크 해결을 위함
+            response = requests.get(url, headers=headers, timeout=10, allow_redirects=True)
+            if response.status_code != 200:
+                return None
+            
+            # 리다이렉트된 최종 URL로 업데이트 (셀렉터 판별용)
+            final_url = response.url
+                
+            soup = BeautifulSoup(response.text, 'lxml')
+            
+            # 1. 사이트별 최적화 셀렉터
+            if "news.naver.com" in final_url:
+                content = soup.select_one("#dic_area") or soup.select_one("#articleBodyContents")
+            elif "chosun.com" in final_url:
+                content = soup.select_one(".article-body") or soup.select_one("#news_body_id")
+            elif "joins.com" in final_url or "joongang.co.kr" in final_url:
+                content = soup.select_one("#article_body") or soup.select_one(".article_body")
+            else:
+                # 2. 범용 기사 본문 셀렉터 (Heuristics 강화)
+                content = (soup.find('article') or 
+                          soup.find('div', class_=re.compile(r'article_body|news_end|view_content|art_body|news_text|viewer|news_body')) or
+                          soup.find('div', id=re.compile(r'articleBody|news_content|art_body|news_text|viewer')))
+            
+            # 3. 스마트 폴백: 위 셀렉터로 못찾았을 경우 모든 p 태그 수집
+            if not content:
+                p_tags = soup.find_all('p')
+                if len(p_tags) > 3: # 최소 3개 이상의 문단이 있어야 기사로 간주
+                    text = " ".join([p.get_text().strip() for p in p_tags if len(p.get_text().strip()) > 20])
+                    if len(text) > 200:
+                        return self._sanitize_text(text)
+
+            if content:
+                # 불필요한 요소 제거
+                for s in content(['script', 'style', 'iframe', 'header', 'footer', 'button', 'nav']):
+                    s.decompose()
+                
+                text = content.get_text(separator=' ', strip=True)
+                return self._sanitize_text(text)
+            
+            return None
+        except Exception as e:
+            return None
+
+    def _sanitize_text(self, text):
+        """저장용 텍스트 정제 (줄바꿈 제거 등)"""
+        if not text: return None
+        # 모든 줄바꿈 및 연속 공백 정제 (JSONL 안정성 확보)
+        text = re.sub(r'[\r\n\t]+', ' ', text)
+        text = re.sub(r'\s+', ' ', text).strip()
+        return text if len(text) > 100 else None
+
     def fetch_news(self, keyword, display=100):
         """네이버 OpenAPI를 통해 뉴스 리스트를 가져옵니다."""
         params = {
@@ -128,9 +224,9 @@ class NaverApiCrawler:
             print(f"    [!] 요청 실패: {e}")
             return []
 
-    def run_crawling(self, target_keywords):
+    def run_crawling(self, target_keywords, fetch_full=False):
         all_results = []
-        print(f"[*] 네이버 API 기반 데이터 수집 시작...")
+        print(f"[*] 네이버 API 기반 데이터 수집 시작 (Full-Text: {fetch_full})...")
 
         for kw in target_keywords:
             print(f"    -> 키워드 '{kw}' 수집 중...", end=" ")
@@ -140,14 +236,22 @@ class NaverApiCrawler:
                 # HTML 태그 제거
                 title = re.sub('<[^>]*>', '', item['title'])
                 description = re.sub('<[^>]*>', '', item['description'])
+                link = item['originallink'] or item['link']
+                
+                # [고도화] 하이브리드: 필요시에만 전문 크롤링 (기본은 API 요약만)
+                content = description
+                if fetch_full:
+                    full_content = self._fetch_full_content(link)
+                    if full_content:
+                        content = full_content
                 
                 processed_item = {
                     "id": f"CTX-API-{datetime.now().strftime('%Y%m%d')}-{random.randint(1000, 9999)}",
-                    "type": self._determine_type(title, description),
+                    "type": self._determine_type(title, content),
                     "title": title,
-                    "source": "Naver News API",
-                    "link": item['originallink'] or item['link'],
-                    "content": description,
+                    "source": "Naver News API" + (" + Full Text" if fetch_full else ""),
+                    "link": link,
+                    "content": content,
                     "timestamp": item['pubDate']
                 }
                 all_results.append(processed_item)
@@ -207,68 +311,149 @@ class NaverApiCrawler:
             }
         }
 
-        with open(file_path, "w", encoding="utf-8") as f:
-            for item in data:
-                # 분류된 타입에 맞는 전략 선택 (없으면 일반형)
-                strat = attack_strategies.get(item['type'], {
-                    "logic": "1. 긴급한 상황 설정 2. 심리적 압박 3. 클릭 유도",
-                    "target_emotion": "일반적 호기심/불안",
-                    "cta": "확인 링크"
-                })
+        # [수정] 증분 저장 로직 (Incremental Merge) - 중복 체크 강화
+        existing_data = []
+        if os.path.exists(file_path):
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    for line in f:
+                        if line.strip():
+                            existing_data.append(json.loads(line))
+            except Exception as e:
+                print(f"[!] 기존 데이터 로드 중 오류: {e}")
 
-                training_entry = {
-                    "context": {
-                        "news_title": item['title'],
-                        "category": item['type'],
-                        "source_date": item['timestamp']
-                    },
-                    "attack_design": {
-                        "instruction": f"제공된 '{item['type']}' 기사(사회적 맥락)를 분석하여, 이를 악용하는 지능형 스미싱 시나리오를 설계하라.",
-                        "strategy_logic": strat["logic"],
-                        "target_emotion": strat["target_emotion"],
-                        "call_to_action": strat["cta"],
-                        "scenario_rules": [
-                            "최대한 정중하거나 공식적인 말투를 사용할 것",
-                            "피해자가 의심할 틈을 주지 않는 구체적인 상황을 설정할 것",
-                            "가짜 URL은 식별이 어렵도록 단축 URL이나 유사 도메인을 사용할 것"
-                        ]
-                    },
-                    "raw_text": item['content']
-                }
-                f.write(json.dumps(training_entry, ensure_ascii=False) + "\n")
+        # 기존 데이터의 URL과 제목(정규화)을 집합으로 관리
+        def normalize_title(title):
+            return re.sub(r'\s+', '', title).strip()
 
-if __name__ == "__main__":
-    crawler = NaverApiCrawler()
-    
-    target_keywords = [
-        # 1. 기존 범죄 키워드
-        "스미싱 부고장", "택배 주소지 확인 문자", "건강검진 결과 조회 사기",
-        "민생회복지원금 사기문자", "교통범칙금 과태료 스미싱", "국세청 환급금 문자",
-        "해외결제 승인 스미싱", "카드 발급 확인 문자 사기", "저금리 대환대출 스미싱",
-        "딥페이크 지인 합성 사기", "영상통화 몸캠 피싱", "AI 목소리 사칭 피싱",
-        "자녀 사칭 메신저 피싱", "부모님 휴대폰 파손 사기",
+        existing_urls = {entry['context'].get('link') for entry in existing_data if entry['context'].get('link')}
+        existing_titles = {normalize_title(entry['context']['news_title']) for entry in existing_data}
         
-        # 2. [신규] 사회 중립적 키워드 (잠재적 공격 재료)
-        "2025년 달라지는 정책", "소상공인 지원금 신청 방법", "청년 월세 지원 대상",
-        "건강보험료 환급금 조회", "연말정산 미리보기 서비스", "아파트 청약 일정",
-        "명절 기차표 예매 일정", "블랙프라이데이 세일 정보"
+        all_entries = existing_data
+        new_count = 0
+        
+        for item in data:
+            norm_title = normalize_title(item['title'])
+            # URL 또는 제목이 이미 존재하면 스킵
+            if item['link'] in existing_urls or norm_title in existing_titles:
+                continue
+                
+            strat = attack_strategies.get(item['type'], {
+                "logic": "1. 긴급한 상황 설정 2. 심리적 압박 3. 클릭 유도",
+                "target_emotion": "일반적 호기심/불안",
+                "cta": "확인 링크"
+            })
+
+            training_entry = {
+                "context": {
+                    "news_title": item['title'],
+                    "category": item['type'],
+                    "source_date": item['timestamp'],
+                    "link": item['link']
+                },
+                "attack_design": {
+                    "instruction": f"제공된 '{item['type']}' 기사(사회적 맥락)를 분석하여, 이를 악용하는 지능형 스미싱 시나리오를 설계하라.",
+                    "strategy_logic": strat["logic"],
+                    "target_emotion": strat["target_emotion"],
+                    "call_to_action": strat["cta"],
+                    "scenario_rules": [
+                        "최대한 정중하거나 공식적인 말투를 사용할 것",
+                        "피해자가 의심할 틈을 주지 않는 구체적인 상황을 설정할 것",
+                        "가짜 URL은 식별이 어렵도록 단축 URL이나 유사 도메인을 사용할 것"
+                    ]
+                },
+                "raw_text": item['content']
+            }
+            all_entries.append(training_entry)
+            existing_urls.add(item['link'])
+            existing_titles.add(norm_title)
+            new_count += 1
+
+        # 최종 저장 (시간순 정렬 시도 - 선택사항)
+        try:
+            # pubDate 파싱이 까다로우면 생략 가능하지만, 가독성을 위해 정렬 권장
+            from email.utils import parsedate_to_datetime
+            def get_dt(x):
+                try: return parsedate_to_datetime(x['context']['source_date'])
+                except: return datetime.min
+            all_entries.sort(key=get_dt, reverse=True)
+        except:
+            pass
+
+        with open(file_path, "w", encoding="utf-8") as f:
+            for entry in all_entries:
+                f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+        
+        print(f"[*] 데이터 동기화 완료: 신규 {new_count}건 추가 (총 {len(all_entries)}건)")
+        return new_count
+
+def run_crawling(fetch_full=False):
+    """앱 대시보드 및 서비스에서 호출할 공용 크롤링 진입점"""
+    # 1. 아키텍처 표준: Google News RSS (Section-based Trending)
+    google_crawler = GoogleNewsRssCrawler()
+    # 2. 보조 소스: Naver API (Keyword-based)
+    naver_crawler = NaverApiCrawler()
+    
+    # 사회적 맥락 파악을 위한 주요 토픽 (RSS가 메인이며, 이들은 보조 검색용)
+    social_context_keywords = [
+        "민생회복지원금", "2026년 달라지는 정책", "건강보험 환급금", 
+        "국민연금 개혁", "아파트 청약 일정", "소상공인 지원 사업"
     ]
 
-    # 데이터 수집 실행
-    final_list = crawler.run_crawling(target_keywords)
+    total_gathered = []
 
-    # 분석 보고서
-    trend_report = crawler.analyze_trends(final_list)
-    print("\n" + "="*50)
-    print(f"총 수집 데이터: {len(final_list)}건")
-    print(f"주요 수법 트렌드 (TOP 5): {trend_report['methods'][:5]}")
-    print("="*50)
+    # [Priority 1] Google News TRENDING 섹션 수집
+    print(f"[*] [Google News RSS] 트렌드 데이터 수집 시작...")
+    for section in ["TOP_STORIES", "BUSINESS", "SOCIETY"]:
+        print(f"    -> 섹션 '{section}' 수집 중...", end=" ")
+        items = google_crawler.fetch_section(section)
+        
+        for item in items:
+            title = re.sub('<[^>]*>', '', item['title']).replace("\n", " ").replace("\r", " ").strip()
+            description = re.sub('<[^>]*>', '', item['description']).replace("\n", " ").replace("\r", " ").strip()
+            link = item['link']
+            
+            content = description
+            if fetch_full:
+                full_text = naver_crawler._fetch_full_content(link)
+                if full_text: content = full_text
 
-    # Raw Data 저장
-    raw_path = os.path.join(crawler.save_dir, "scam_news_api_raw.json")
-    with open(raw_path, "w", encoding="utf-8") as f:
-        json.dump(final_list, f, ensure_ascii=False, indent=4)
+            processed = {
+                "id": f"CTX-GSS-{datetime.now().strftime('%Y%m%d')}-{random.randint(1000, 9999)}",
+                "type": naver_crawler._determine_type(title, content),
+                "title": title,
+                "source": f"Google News RSS ({section})" + (" + Full Text" if fetch_full else ""),
+                "link": link,
+                "content": content,
+                "timestamp": item['pubDate']
+            }
+            total_gathered.append(processed)
+        print(f"({len(items)}건 완료)")
+
+    # [Priority 2] Naver API 보조 수집
+    print(f"[*] [Naver News API] 보조 수집 시작...")
+    naver_results = naver_crawler.run_crawling(social_context_keywords, fetch_full=fetch_full)
+    total_gathered.extend(naver_results)
+
+    # 링크 기준 중복 제거
+    unique_dict = {v['link']: v for v in total_gathered}
+    final_gathered = list(unique_dict.values())
+
+    # 분석 및 저장 (Incremental Merge 포함)
+    new_count = naver_crawler.save_for_scenario_generation(final_gathered)
     
-    # 시나리오 생성용 JSONL 저장
-    crawler.save_for_scenario_generation(final_list)
-    print(f"\n[Success] 모든 데이터가 {crawler.save_dir} 폴더에 저장되었습니다.")
+    # Raw JSON 저장 (최신 기준)
+    raw_path = os.path.join(naver_crawler.save_dir, "scam_news_api_raw.json")
+    with open(raw_path, "w", encoding="utf-8") as f:
+        json.dump(final_gathered, f, ensure_ascii=False, indent=4)
+        
+    return new_count, len(final_gathered)
+
+def fetch_full_content(url):
+    """단일 기사의 전문을 수집하는 전역 함수 (On-Demand)"""
+    crawler = NaverApiCrawler()
+    return crawler._fetch_full_content(url)
+
+if __name__ == "__main__":
+    results = run_crawling(fetch_full=True) # 로컬 실행 시에는 전문 수집
+    print(f"\n[Success] 데이터 수집 및 증분 저장이 완료되었습니다.")

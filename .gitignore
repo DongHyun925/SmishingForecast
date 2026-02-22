@@ -1,5 +1,65 @@
+# Environment variables
 .env
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+*.log
+*.tmp
+temp/
+tmp/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Project specific
 해커톤.zip
 poetry.lock
 pyproject.toml
-models/refined_kcbert/model.safetensors
+
+# Exclude large model files (keep weights only)
+models/refined_kcbert/
+models/*/config.json
+models/*/tokenizer*
+*.pth
+*.bin
+*.safetensors
+
+# 실행 시 자동 생성되는 대용량 데이터 파일 제외 (크롤링 결과)
+data/smishing_context_data.jsonl
+data/smishing_context_data.jsonl.bak
+data/scam_news_api_raw.json
+data/temp_*.json
+data/vulnerabilities.json
+data/raw_*.jsonl
+
+# Test and debug files
+debug_*.py
+test_*.py
+!test_dataset.json
+
+# Hugging Face upload folder
+hf_model_upload/
+scripts/hf_model_upload/

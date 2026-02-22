@@ -10,8 +10,12 @@ class SmishingTrainer:
         self.detector = detector
         self.model = detector.model
         self.tokenizer = detector.tokenizer
+<<<<<<< Updated upstream
         # [변경] 데모 효과를 위해 학습률을 2e-6 -> 5e-5로 대폭 상향 (즉각 반응 유도)
         self.optimizer = AdamW(self.model.parameters(), lr=5e-5)
+=======
+        self.optimizer = AdamW(self.model.parameters(), lr=1e-5) # [조정] 더 세밀한 학습을 위해 LR 하향
+>>>>>>> Stashed changes
 
     def train_on_vulnerabilities(self, data_path="data/vulnerabilities.json"):
         """
@@ -33,9 +37,15 @@ class SmishingTrainer:
         
         self.model.train()
         
+<<<<<<< Updated upstream
         # [변경] "될 때까지 학습한다" (Target-based Overfitting)
         TARGET_CONFIDENCE = 0.98
         MAX_STEPS = 30
+=======
+        # [수정] 과도한 학습(Extreme Learning) 방지를 위해 수치 대폭 완화
+        TARGET_CONFIDENCE = 0.85 # 0.95 -> 0.85 (완만한 학습 유도)
+        MAX_STEPS = 5           # 20 -> 5 (과적합 방지)
+>>>>>>> Stashed changes
         
         for item in vulnerabilities:
             # 'attack_message' 또는 'generated_message' 중 존재하는 필드 사용
@@ -52,8 +62,33 @@ class SmishingTrainer:
                 self.optimizer.zero_grad()
                 outputs = self.model(**inputs, labels=label)
                 
+<<<<<<< Updated upstream
                 # 현재 확률 확인
                 probs = torch.softmax(outputs.logits, dim=1)
+=======
+                # 2. [강화된 Regularization] 정상 데이터(Ham) 4배수 학습 (Overfitting 강력 억제)
+                loss_ham = 0
+                if ham_samples:
+                    # 안정성을 위해 정상 데이터를 4개 뽑아서 평균 Loss를 구함
+                    ham_batch = random.sample(ham_samples, k=min(len(ham_samples), 4))
+                    for h_text in ham_batch:
+                        h_inputs = self.tokenizer(h_text, return_tensors="pt", truncation=True, padding=True).to(self.detector.device)
+                        h_label = torch.tensor([0]).to(self.detector.device) # Target: Ham(0)
+                        
+                        h_outputs = self.model(**h_inputs, labels=h_label)
+                        loss_ham += h_outputs.loss
+                    
+                    # 4개분 Loss를 평균내거나 합산 (여기서는 합산하여 정상 데이터 비중을 높임)
+                    loss_ham = loss_ham / len(ham_batch) 
+
+                # Total Loss = Spam Loss + (Ham Loss * 3.0) : 정상 데이터 가중치 대폭 강화 (일반 문장 망각 방지)
+                total_loss = loss_spam + (loss_ham * 3.0)
+                total_loss.backward()
+                self.optimizer.step()
+
+                # 확률 체크 (Spam에 대해서만)
+                probs = torch.softmax(self.model(**inputs).logits, dim=1)
+>>>>>>> Stashed changes
                 smishing_prob = probs[0][1].item()
                 
                 if smishing_prob >= TARGET_CONFIDENCE:
