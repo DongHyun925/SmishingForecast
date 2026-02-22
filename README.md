@@ -184,7 +184,7 @@ flowchart TB
 
     subgraph RED["🔴 Red Team: 공격 시뮬레이션"]
         direction LR
-        RSS["Google News RSS\n+ Naver API"] --> CRAWLER["Crawler\n(feedparser + BS4\nIncremental Merge)"]
+        RSS["Google News RSS\n+ Naver API"] --> CRAWLER["Crawler\n(feedparser: RSS 파싱\nBS4: 원문 크롤링)"]
         CRAWLER --> PLANNER["Attack Planner\n(GPT-4o 기반\n3종 전략 수립)"]
         PLANNER --> GENERATOR["Attack Generator\n(GPT-4o)\n스미싱 문자 생성"]
     end
