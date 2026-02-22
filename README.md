@@ -177,24 +177,42 @@ Hackathon_Smishing/
 ### 시스템 아키텍처
 
 ```mermaid
-flowchart TD
-    A["🌐 Google News RSS\n주요뉴스 / 경제 / 사회"] --> C
-    B["📰 Naver News API\n사회적 맥락 키워드"] --> C
-    C["🔄 Incremental Merge\n중복 제거 & 증분 저장"] --> D["📄 smishing_context_data.jsonl\n뉴스 인텔리전스 DB"]
+flowchart TB
+    subgraph UI["🖥️ User Interface (Control Center)"]
+        DASH["Security Dashboard\n(Streamlit)"]
+    end
 
-    D --> E["🔴 LLM Planner\nGPT-4o 기반 공격 전략 수립\n3종 시나리오 도출"]
-    E --> F["💬 GPT-4o Generator\n스미싱 문자 자동 생성"]
+    subgraph RED["🔴 Red Team: 공격 시뮬레이션"]
+        direction LR
+        RSS["Google News RSS\n+ Naver API"] --> CRAWLER["Crawler\n(feedparser + BS4\nIncremental Merge)"]
+        CRAWLER --> PLANNER["Attack Planner\n(GPT-4o 기반\n3종 전략 수립)"]
+        PLANNER --> GENERATOR["Attack Generator\n(GPT-4o)\n스미싱 문자 생성"]
+    end
 
-    F --> G["🔵 RoBERTa Detector\nklue/roberta-base Fine-tuned\n스미싱 탐지 점수 계산"]
-    G --> H{"탐지 성공?"}
+    subgraph BLUE["🔵 Blue Team: 지능형 방어"]
+        direction LR
+        DETECTOR["Smishing Detector\n(klue/roberta-base\nFine-tuned)"]
+        ANALYZER["Intent Analyzer\n(GPT-4o 기반\nSOC 위협 프로파일링)"]
+        TRAINER["Self-Evolution Trainer\n(Adversarial Training\n+ Replay Buffer)"]
+        DETECTOR --> ANALYZER
+        TRAINER -- "Model Update" --> DETECTOR
+    end
 
-    H -- "✅ 탐지됨" --> I["📊 Intent Analyzer\nSOC 표준 위협 프로파일링"]
-    H -- "❌ 미탐지" --> J["🧬 Adversarial Trainer\nReplay Buffer 자가 진화 학습"]
+    subgraph DATA["💾 Data & Reporting"]
+        DB["Database Manager\n(SQLite / Supabase)"]
+        SMDB[("smishing_db")]
+        REPORT["Report Generator\n(PDF / Markdown)"]
+        DB <--> SMDB
+        DB --> REPORT
+    end
 
-    J --> K["💉 Digital Vaccine\n강화된 모델 가중치 배포"]
-    K --> G
-
-    I --> L["📄 Report Generator\nPDF / Markdown 보안 리포트"]
+    DASH -- "①뉴스 선택" --> CRAWLER
+    DASH -- "②시뮬레이션 실행" --> PLANNER
+    GENERATOR -- "공격 페이로드 전송" --> DETECTOR
+    DETECTOR -- "미탐지 시 재학습" --> TRAINER
+    ANALYZER -- "분석 데이터 저장" --> DB
+    DB -- "③결과 조회" --> DASH
+    REPORT -- "④PDF 리포트 제공" --> DASH
 ```
 
 ### AI 모델
